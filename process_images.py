@@ -17,35 +17,51 @@ def parse_args():
 
     # Parse command line arguments
     ap = argparse.ArgumentParser(description="Detectron2 image processing pipeline")
-    ap.add_argument("-i", "--input", required=True,
-                    help="path to input image file or directory")
-    ap.add_argument("-o", "--output", default="output",
-                    help="path to output directory (default: output)")
-    ap.add_argument("-p", "--progress", action="store_true",
-                    help="display progress")
-    ap.add_argument("-sb", "--separate-background", action="store_true",
-                    help="separate background")
+    ap.add_argument(
+        "-i", "--input", required=True, help="path to input image file or directory"
+    )
+    ap.add_argument(
+        "-o",
+        "--output",
+        default="output",
+        help="path to output directory (default: output)",
+    )
+    ap.add_argument("-p", "--progress", action="store_true", help="display progress")
+    ap.add_argument(
+        "-sb", "--separate-background", action="store_true", help="separate background"
+    )
 
     # Detectron settings
-    ap.add_argument("--config-file",
-                    default="configs/COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x.yaml",
-                    help="path to config file (default: configs/COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x.yaml)")
-    ap.add_argument("--config-opts", default=[], nargs=argparse.REMAINDER,
-                    help="modify model config options using the command-line")
-    ap.add_argument("--weights-file", default=None,
-                    help="path to model weights file")
-    ap.add_argument("--confidence-threshold", type=float, default=0.5,
-                    help="minimum score for instance predictions to be shown (default: 0.5)")
+    ap.add_argument(
+        "--config-file",
+        default="configs/COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x.yaml",
+        help="path to config file (default: configs/COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x.yaml)",
+    )
+    ap.add_argument(
+        "--config-opts",
+        default=[],
+        nargs=argparse.REMAINDER,
+        help="modify model config options using the command-line",
+    )
+    ap.add_argument("--weights-file", default=None, help="path to model weights file")
+    ap.add_argument(
+        "--confidence-threshold",
+        type=float,
+        default=0.5,
+        help="minimum score for instance predictions to be shown (default: 0.5)",
+    )
 
     # Mutliprocessing settings
-    ap.add_argument("--gpus", type=int, default=1,
-                    help="number of GPUs (default: 1)")
-    ap.add_argument("--cpus", type=int, default=0,
-                    help="number of CPUs (default: 1)")
-    ap.add_argument("--queue-size", type=int, default=3,
-                    help="queue size per process (default: 3)")
-    ap.add_argument("--single-process", action="store_true",
-                    help="force the pipeline to run in a single process")
+    ap.add_argument("--gpus", type=int, default=1, help="number of GPUs (default: 1)")
+    ap.add_argument("--cpus", type=int, default=0, help="number of CPUs (default: 1)")
+    ap.add_argument(
+        "--queue-size", type=int, default=3, help="queue size per process (default: 3)"
+    )
+    ap.add_argument(
+        "--single-process",
+        action="store_true",
+        help="force the pipeline to run in a single process",
+    )
 
     return ap.parse_args()
 
@@ -55,21 +71,28 @@ def main(args):
     os.makedirs(args.output, exist_ok=True)
 
     # Create pipeline steps
-    capture_images = CaptureImages(args.input) \
-        if os.path.isdir(args.input) else CaptureImage(args.input)
+    capture_images = (
+        CaptureImages(args.input)
+        if os.path.isdir(args.input)
+        else CaptureImage(args.input)
+    )
 
-    cfg = detectron.setup_cfg(config_file=args.config_file,
-                              weights_file=args.weights_file,
-                              config_opts=args.config_opts,
-                              confidence_threshold=args.confidence_threshold,
-                              cpu=False if args.gpus > 0 else True)
+    cfg = detectron.setup_cfg(
+        config_file=args.config_file,
+        weights_file=args.weights_file,
+        config_opts=args.config_opts,
+        confidence_threshold=args.confidence_threshold,
+        cpu=False if args.gpus > 0 else True,
+    )
     if not args.single_process:
         mp.set_start_method("spawn", force=True)
-        predict = AsyncPredict(cfg,
-                               num_gpus=args.gpus,
-                               num_cpus=args.cpus,
-                               queue_size=args.queue_size,
-                               ordered=False)
+        predict = AsyncPredict(
+            cfg,
+            num_gpus=args.gpus,
+            num_cpus=args.cpus,
+            queue_size=args.queue_size,
+            ordered=False,
+        )
     else:
         predict = Predict(cfg)
 
@@ -84,11 +107,9 @@ def main(args):
     save_image = SaveImage("vis_image", args.output)
 
     # Create image processing pipeline
-    pipeline = (capture_images |
-                predict |
-                separate_background |
-                annotate_image |
-                save_image)
+    pipeline = (
+        capture_images | predict | separate_background | annotate_image | save_image
+    )
 
     # Iterate through pipeline
     try:
