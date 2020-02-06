@@ -14,12 +14,9 @@ class CaptureImage(Pipeline):
     def generator(self):
         """Yields the image content and metadata."""
 
-        image = cv2.imread(self.src)
+        image = cv2.imread(self.src, cv2.IMREAD_UNCHANGED)
 
-        data = {
-            "image_id": self.src,
-            "image": image
-        }
+        data = {"image_id": self.src, "image": image}
 
         if self.filter(data):
             yield self.map(data)
