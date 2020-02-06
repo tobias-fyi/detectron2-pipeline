@@ -33,7 +33,6 @@ class SeparateBackground(Pipeline):
         # Sum up all the instance masks
         mask = instances.pred_masks.cpu().sum(0) >= 1
         mask = mask.numpy().astype("uint8") * 255
-        print(f"Early mask shape: {mask.shape}")
         # Create 3-channels mask (now 4 channels)
         mask = np.stack([mask, mask, mask], axis=2)
 
@@ -61,7 +60,6 @@ class SeparateBackground(Pipeline):
 
         # Multiply the foreground with the mask
         foreground = cv2.multiply(foreground, mask)
-        print(f"Foreground: {foreground.shape}")
 
         # Multiply the background with ( 1 - mask )
         # background = cv2.multiply(background, 1.0 - mask)
